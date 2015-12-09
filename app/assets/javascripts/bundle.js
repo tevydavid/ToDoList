@@ -46,7 +46,12 @@
 
 	var TodoList = __webpack_require__(2);
 	var React = __webpack_require__(3);
-	var ReactDOM = __webpack_require__(160);
+	var ReactDom = __webpack_require__(160);
+	
+	document.addEventListener('DOMContentLoaded', function () {
+	
+	  ReactDom.render(React.createElement(TodoList, null), document.getElementById('root'));
+	});
 
 /***/ },
 /* 1 */
@@ -139,6 +144,8 @@
 
 	var React = __webpack_require__(3);
 	var TodoStore = __webpack_require__(1);
+	var TodoListItem = __webpack_require__(161);
+	var TodoForm = __webpack_require__(162);
 	
 	var TodoList = React.createClass({
 	  displayName: 'TodoList',
@@ -147,26 +154,33 @@
 	    return { todoItems: TodoStore.all() };
 	  },
 	  componentDidMount: function () {
+	    TodoStore.addChangedHandler(this.todosChanged);
 	    TodoStore.fetch();
+	  },
+	  todosChanged: function () {
+	    this.setState({ todoItems: TodoStore.all() });
+	  },
+	  componentWillUnmount: function () {
+	    TodoStore.removeChangedHandler(this.todosChanged);
 	  },
 	  render: function () {
 	    return React.createElement(
 	      'div',
 	      null,
-	      React.createElement(
-	        'ul',
-	        null,
-	        this.state.todoItems.map(function (item) {
-	          return React.createElement(
-	            'li',
-	            null,
-	            'item[\'title\']'
-	          );
-	        })
-	      )
+	      this.state.todoItems.map(function (item, idx) {
+	        return React.createElement(
+	          'div',
+	          { key: idx },
+	          React.createElement(TodoListItem, { key: idx, item: item }),
+	          React.createElement('br', null)
+	        );
+	      }),
+	      React.createElement(TodoForm, null)
 	    );
 	  }
 	});
+	
+	module.exports = TodoList;
 
 /***/ },
 /* 3 */
@@ -19754,6 +19768,186 @@
 	
 	module.exports = __webpack_require__(5);
 
+
+/***/ },
+/* 161 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var React = __webpack_require__(3);
+	var TodoStore = __webpack_require__(1);
+	var TodoDetailView = __webpack_require__(164);
+	var DoneButton = __webpack_require__(163);
+	
+	var TodoListItem = React.createClass({
+	  displayName: 'TodoListItem',
+	
+	  getInitialState: function () {
+	    return { clicked: false };
+	  },
+	
+	  handleClick: function () {
+	    this.setState({ clicked: !this.state.clicked });
+	  },
+	
+	  render: function () {
+	    return React.createElement(
+	      'div',
+	      null,
+	      React.createElement(
+	        'div',
+	        { onClick: this.handleClick },
+	        this.props.item['title']
+	      ),
+	      React.createElement(DoneButton, { item: this.props.item, store: TodoStore }),
+	      this.state.clicked ? React.createElement(TodoDetailView, { item: this.props.item }) : ""
+	    );
+	  }
+	});
+	
+	module.exports = TodoListItem;
+
+/***/ },
+/* 162 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var React = __webpack_require__(3);
+	var TodoStore = __webpack_require__(1);
+	
+	var TodoForm = React.createClass({
+	  displayName: 'TodoForm',
+	
+	  getInitialState: function () {
+	    return { title: "", body: "" };
+	  },
+	  updateTitle: function (event) {
+	    this.setState({ title: event.target.value });
+	  },
+	  updateBody: function (event) {
+	    this.setState({ body: event.target.value });
+	  },
+	  handleSubmit: function (event) {
+	    event.preventDefault();
+	    TodoStore.create({ todo: { title: this.state.title, body: this.state.body } });
+	    this.setState({ title: "", body: "" });
+	  },
+	  render: function () {
+	    return React.createElement(
+	      'div',
+	      null,
+	      React.createElement(
+	        'form',
+	        { onSubmit: this.handleSubmit },
+	        'Title: ',
+	        React.createElement('input', { onChange: this.updateTitle, value: this.state.title }),
+	        React.createElement('br', null),
+	        'Body: ',
+	        React.createElement('input', { onChange: this.updateBody, value: this.state.body }),
+	        React.createElement('br', null),
+	        React.createElement('input', { type: 'submit', value: 'New ToDo' })
+	      )
+	    );
+	  }
+	});
+	
+	module.exports = TodoForm;
+
+/***/ },
+/* 163 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var React = __webpack_require__(3);
+	var TodoStore = __webpack_require__(1);
+	
+	var DoneButton = React.createClass({
+	  displayName: 'DoneButton',
+	
+	  handleDone: function () {
+	    this.props.store.toggleDone(this.props.item["id"]);
+	  },
+	  render: function () {
+	    var text = this.props.item["done"] ? "Undo" : "Done";
+	    return React.createElement(
+	      'button',
+	      { onClick: this.handleDone },
+	      text
+	    );
+	  }
+	});
+	
+	module.exports = DoneButton;
+
+/***/ },
+/* 164 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var React = __webpack_require__(3);
+	var TodoStore = __webpack_require__(1);
+	var TodoSteps = __webpack_require__(165);
+	
+	var TodoListItem = React.createClass({
+	  displayName: 'TodoListItem',
+	
+	  handleDestroy: function () {
+	    TodoStore.destroy(this.props.item["id"]);
+	  },
+	
+	  render: function () {
+	    return React.createElement(
+	      'div',
+	      null,
+	      React.createElement(
+	        'div',
+	        null,
+	        this.props.item['body']
+	      ),
+	      React.createElement(
+	        'button',
+	        { onClick: this.handleDestroy },
+	        'Delete'
+	      ),
+	      React.createElement(TodoSteps, { item: this.props.item })
+	    );
+	  }
+	});
+	
+	module.exports = TodoListItem;
+
+/***/ },
+/* 165 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var React = __webpack_require__(3);
+	var TodoStore = __webpack_require__(1);
+	var DoneButton = __webpack_require__(163);
+	
+	var tempSteps = { 3: ['step1', 'step2'] };
+	var stepStore = { toggleDone: function () {
+	    alert("nice work");
+	  }
+	};
+	
+	var TodoSteps = React.createClass({
+	  displayName: 'TodoSteps',
+	
+	  render: function () {
+	    var steps = tempSteps[this.props.item['id']];
+	    var mappedSteps = steps ? steps.map((function (step, idx) {
+	      return React.createElement(
+	        'div',
+	        { key: idx },
+	        step,
+	        React.createElement(DoneButton, { store: stepStore, item: this.props.item })
+	      );
+	    }).bind(this)) : [];
+	    return React.createElement(
+	      'div',
+	      null,
+	      mappedSteps
+	    );
+	  }
+	});
+	
+	module.exports = TodoSteps;
 
 /***/ }
 /******/ ]);
